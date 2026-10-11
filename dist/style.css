@@ -623,6 +623,27 @@ h2 {
   color: var(--muted);
   margin: 10px 12px;
 }
+.captureStats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  padding: 4px 12px 12px;
+}
+.captureStats > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 5px;
+  border-bottom: 1px solid #252c2f;
+}
+.captureStats dt,
+.captureStats dd {
+  font-size: 10px;
+}
+.captureStats dd {
+  color: var(--text);
+  font-weight: 650;
+}
 .detailPanel {
   min-height: 350px;
 }

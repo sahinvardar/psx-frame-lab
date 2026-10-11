@@ -122,6 +122,7 @@ function createReplayWorker() {
         ["polygon", "rectangle", "line"].includes(c.kind),
       ).length;
       $("countBadge").textContent = draws.toLocaleString() + " DRAW COMMANDS";
+      renderCaptureStats(commands);
       $("setupInfo").textContent =
         m.setup.length + " setup commands restored before step 1";
       $("interval").replaceChildren(new Option("All intervals", "all"));
@@ -213,6 +214,7 @@ function startLoadBuffer(buffer, filename) {
   stopPlayback();
   name = filename;
   setReady(false);
+  renderCaptureStats([]);
   busy = true;
   commands = [];
   listNodes.clear();
@@ -220,6 +222,59 @@ function startLoadBuffer(buffer, filename) {
   createReplayWorker();
   showNotice("Reading " + filename + "…");
   worker.postMessage({ type: "load", buffer }, [buffer]);
+}
+function renderCaptureStats(captureCommands) {
+  const stats = {
+    triangles: 0,
+    quads: 0,
+    rectangles: 0,
+    lines: 0,
+    polylines: 0,
+    textured: 0,
+    gouraud: 0,
+    fills: 0,
+  };
+  for (const command of captureCommands) {
+    if (command.kind === "polygon") {
+      stats[command.v.length === 4 ? "quads" : "triangles"]++;
+    } else if (command.kind === "rectangle") {
+      stats.rectangles++;
+    } else if (command.kind === "line") {
+      stats[command.v.length > 2 ? "polylines" : "lines"]++;
+    } else if (command.kind === "fill") {
+      stats.fills++;
+    }
+    if (
+      ["polygon", "rectangle"].includes(command.kind) &&
+      command.v.some((vertex) => vertex.uv)
+    )
+      stats.textured++;
+    if (
+      ["polygon", "line"].includes(command.kind) &&
+      command.name.startsWith("Gouraud")
+    )
+      stats.gouraud++;
+  }
+  const draws =
+    stats.triangles +
+    stats.quads +
+    stats.rectangles +
+    stats.lines +
+    stats.polylines;
+  $("drawTotal").textContent = draws.toLocaleString() + " DRAWS";
+  const values = [
+    stats.triangles,
+    stats.quads,
+    stats.rectangles,
+    stats.lines,
+    stats.polylines,
+    stats.textured,
+    stats.gouraud,
+    stats.fills,
+  ];
+  [...$("captureStats").querySelectorAll("dd")].forEach((element, index) => {
+    element.textContent = values[index].toLocaleString();
+  });
 }
 function loadBuffer(buffer, filename) {
   fileLoadRequest++;

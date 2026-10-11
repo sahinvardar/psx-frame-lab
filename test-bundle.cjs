@@ -7,6 +7,8 @@ assert(html.includes("window.PSX_WORKER_SOURCE="));
 assert(html.includes('id="folder"'));
 assert(html.includes('id="folderList"'));
 assert(html.includes("webkitdirectory"));
+assert(html.includes('id="captureStats"'));
+assert(html.includes('id="drawTotal"'));
 if (!process.argv[2]) {
   console.log("Standalone bundle check passed.");
   process.exit(0);

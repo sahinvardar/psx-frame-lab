@@ -44,6 +44,7 @@ The default test suite runs all self-contained checks. Capture-backed integratio
 - Selected textured commands highlight the texture page and palette.
 - **Draw target** crops to the current drawing area; **Display buffer** shows the configured output region.
 - PNG exports save the final frame or raw VRAM without region overlays.
+- **Capture statistics** summarizes triangle, quad, rectangle, line, and polyline draw commands, plus textured and Gouraud subsets and VRAM fills.
 
 ## Geometry view
 
