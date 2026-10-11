@@ -178,6 +178,71 @@ header {
   color: #ffb5a9;
   background: #351e1c;
 }
+.folderPanel {
+  margin: 0 25px 17px;
+}
+.folderPanel[hidden] {
+  display: none;
+}
+.folderPanel .panelHead > div {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+.folderList {
+  display: flex;
+  gap: 10px;
+  padding: 12px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.dumpCard {
+  width: 190px;
+  flex: 0 0 190px;
+  padding: 0;
+  overflow: hidden;
+  text-align: left;
+  background: #111618;
+}
+.dumpCard:hover {
+  background: #1d2528;
+}
+.dumpCard.active {
+  border-color: var(--mint);
+  box-shadow: 0 0 0 1px var(--mint);
+}
+.dumpPreview {
+  display: block;
+  width: 188px;
+  height: 106px;
+  background: #080a0c;
+  image-rendering: pixelated;
+}
+.dumpCardText {
+  display: block;
+  padding: 8px 9px 9px;
+}
+.dumpCardName,
+.dumpCardMeta {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dumpCardName {
+  font-size: 11px;
+}
+.dumpCardMeta {
+  margin-top: 3px;
+  color: var(--muted);
+  font:
+    9px ui-monospace,
+    monospace;
+}
+.dumpCard.error .dumpCardMeta {
+  color: #ff9f91;
+}
 main {
   padding: 0 25px;
   display: grid;
@@ -727,6 +792,14 @@ body.dragging #dropOverlay {
   }
   #notice {
     margin: 0 12px 12px;
+  }
+  .folderPanel {
+    margin: 0 12px 12px;
+  }
+  .folderPanel .panelHead > div {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
   }
   main {
     display: flex;

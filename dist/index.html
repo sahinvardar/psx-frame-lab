@@ -19,7 +19,17 @@
       <div class="headerActions">
         <span class="local">● Files stay in your browser</span
         ><button id="demo">Load demo</button
-        ><label class="button primary" for="file">＋ Open GPU dump</label
+        ><label class="button" for="folder">Open folder</label
+        ><input
+          id="folder"
+          type="file"
+          accept=".psxgpu,.zst"
+          webkitdirectory
+          directory
+          multiple
+          hidden
+        />
+        <label class="button primary" for="file">＋ Open GPU dump</label
         ><input id="file" type="file" accept=".psxgpu,.zst" hidden />
       </div>
     </header>
@@ -37,6 +47,22 @@
       Drop a dump anywhere to inspect it. Zstandard decompression happens
       locally.
     </div>
+    <section id="folderPanel" class="folderPanel panel" hidden>
+      <div class="panelHead">
+        <div>
+          <span class="eyebrow">FOLDER</span>
+          <h2 id="folderName">GPU dumps</h2>
+          <span id="folderCount" class="muted"></span>
+        </div>
+        <button id="closeFolder" title="Close folder view">Close</button>
+      </div>
+      <div
+        id="folderList"
+        class="folderList"
+        role="listbox"
+        aria-label="GPU dumps in folder"
+      ></div>
+    </section>
     <main>
       <aside class="commands panel">
         <div class="panelHead">

@@ -6,7 +6,7 @@ PSX Frame Lab is a local browser tool for inspecting DuckStation PS1 GPU dumps. 
 
 Double-click `dist/PSX-Frame-Lab.html` in a modern browser. The standalone file includes the worker, decoder, renderer, and Zstandard library, so no server or internet connection is required.
 
-Choose **Open GPU dump** or drop a `.psxgpu` or `.psxgpu.zst` file anywhere. Files are read locally and never uploaded. **Load demo** creates a synthetic capture with no bundled game data.
+Choose **Open GPU dump** or drop a `.psxgpu` or `.psxgpu.zst` file anywhere. Choose **Open folder** to build a local preview strip of every supported dump in a folder, then select a preview to inspect that capture. Folder previews are generated one at a time in your browser. Files are read locally and never uploaded. **Load demo** creates a synthetic capture with no bundled game data.
 
 For modular-source development, use the included Vite server. The standalone HTML supports direct file opening; the modular `index.html` requires an HTTP server for the worker.
 

@@ -43,7 +43,11 @@ let worker = null,
   listNodes = new Map(),
   name = "",
   drag = null,
-  ready = false;
+  ready = false,
+  fileLoadRequest = 0,
+  folderGeneration = 0,
+  folderFiles = [],
+  selectedFolderIndex = -1;
 const esc = (s) =>
   String(s).replace(
     /[&<>"']/g,
@@ -82,13 +86,7 @@ function stopPlayback() {
 }
 function createReplayWorker() {
   if (worker) worker.terminate();
-  const workerURL = window.PSX_WORKER_SOURCE
-    ? URL.createObjectURL(
-        new Blob([window.PSX_WORKER_SOURCE], { type: "text/javascript" }),
-      )
-    : "worker.js";
-  worker = new Worker(workerURL);
-  if (window.PSX_WORKER_SOURCE) URL.revokeObjectURL(workerURL);
+  worker = createWorker();
   worker.onmessage = ({ data: m }) => {
     if (m.type === "progress") showNotice(m.text);
     else if (m.type === "error") {
@@ -201,7 +199,17 @@ function createReplayWorker() {
     showNotice("Replay worker failed: " + e.message, true);
   };
 }
-function loadBuffer(buffer, filename) {
+function createWorker() {
+  const workerURL = window.PSX_WORKER_SOURCE
+    ? URL.createObjectURL(
+        new Blob([window.PSX_WORKER_SOURCE], { type: "text/javascript" }),
+      )
+    : "worker.js";
+  const replayWorker = new Worker(workerURL);
+  if (window.PSX_WORKER_SOURCE) URL.revokeObjectURL(workerURL);
+  return replayWorker;
+}
+function startLoadBuffer(buffer, filename) {
   stopPlayback();
   name = filename;
   setReady(false);
@@ -212,6 +220,10 @@ function loadBuffer(buffer, filename) {
   createReplayWorker();
   showNotice("Reading " + filename + "…");
   worker.postMessage({ type: "load", buffer }, [buffer]);
+}
+function loadBuffer(buffer, filename) {
+  fileLoadRequest++;
+  startLoadBuffer(buffer, filename);
 }
 async function loadFile(file) {
   if (!file) return;
@@ -227,14 +239,161 @@ async function loadFile(file) {
     return;
   }
   try {
-    loadBuffer(await file.arrayBuffer(), file.name);
+    const request = ++fileLoadRequest;
+    const buffer = await file.arrayBuffer();
+    if (request === fileLoadRequest) startLoadBuffer(buffer, file.name);
   } catch (e) {
     showNotice(e.message, true);
   }
 }
 $("file").onchange = (e) => {
+  selectFolderCard(-1);
   loadFile(e.target.files[0]);
   e.target.value = "";
+};
+function isGpuDump(file) {
+  const filename = file.name.toLowerCase();
+  return filename.endsWith(".psxgpu") || filename.endsWith(".zst");
+}
+function selectFolderCard(index) {
+  selectedFolderIndex = index;
+  for (const [cardIndex, card] of [...$("folderList").children].entries()) {
+    const active = cardIndex === index;
+    card.classList.toggle("active", active);
+    card.setAttribute("aria-selected", active ? "true" : "false");
+  }
+}
+function selectFolderFile(index) {
+  selectFolderCard(index);
+  loadFile(folderFiles[index]);
+}
+function previewFile(file) {
+  return new Promise(async (resolve, reject) => {
+    if (file.size > 64 * 1048576) {
+      reject(Error("File exceeds 64 MB"));
+      return;
+    }
+    const previewWorker = createWorker();
+    previewWorker.onmessage = ({ data }) => {
+      if (data.type === "loaded") {
+        previewWorker.terminate();
+        resolve(data);
+      } else if (data.type === "error") {
+        previewWorker.terminate();
+        reject(Error(data.text));
+      }
+    };
+    previewWorker.onerror = (event) => {
+      previewWorker.terminate();
+      reject(Error(event.message || "Preview worker failed"));
+    };
+    try {
+      const buffer = await file.arrayBuffer();
+      previewWorker.postMessage({ type: "load", buffer }, [buffer]);
+    } catch (error) {
+      previewWorker.terminate();
+      reject(error);
+    }
+  });
+}
+function drawFolderPreview(canvas, preview) {
+  const source = document.createElement("canvas");
+  source.width = 1024;
+  source.height = 512;
+  source
+    .getContext("2d")
+    .putImageData(new ImageData(preview.pixels, 1024, 512), 0, 0);
+  const [x, y, width, height] = getStateRenderRegion(preview.state, "draw");
+  const previewContext = canvas.getContext("2d");
+  const scale = Math.min(canvas.width / width, canvas.height / height);
+  const outputWidth = width * scale;
+  const outputHeight = height * scale;
+  previewContext.fillStyle = "#080a0c";
+  previewContext.fillRect(0, 0, canvas.width, canvas.height);
+  previewContext.imageSmoothingEnabled = false;
+  previewContext.drawImage(
+    source,
+    x,
+    y,
+    width,
+    height,
+    (canvas.width - outputWidth) / 2,
+    (canvas.height - outputHeight) / 2,
+    outputWidth,
+    outputHeight,
+  );
+}
+async function buildFolderPreviews(generation) {
+  for (const [index, file] of folderFiles.entries()) {
+    if (generation !== folderGeneration) return;
+    const card = $("folderList").children[index];
+    try {
+      const preview = await previewFile(file);
+      if (generation !== folderGeneration) return;
+      drawFolderPreview(card.querySelector("canvas"), preview);
+      card.querySelector(".dumpCardMeta").textContent = [
+        preview.info.game || "Unknown game",
+        preview.commands.length.toLocaleString() + " commands",
+      ].join(" · ");
+    } catch (error) {
+      if (generation !== folderGeneration) return;
+      card.classList.add("error");
+      card.querySelector(".dumpCardMeta").textContent =
+        error.message || "Preview failed";
+    }
+  }
+}
+function openFolder(files) {
+  folderGeneration++;
+  folderFiles = [...files]
+    .filter(isGpuDump)
+    .sort((a, b) =>
+      (a.webkitRelativePath || a.name).localeCompare(
+        b.webkitRelativePath || b.name,
+        undefined,
+        { numeric: true, sensitivity: "base" },
+      ),
+    );
+  if (!folderFiles.length) {
+    showNotice("That folder contains no .psxgpu or .zst files.", true);
+    return;
+  }
+  const firstPath = folderFiles[0].webkitRelativePath;
+  $("folderName").textContent = firstPath
+    ? firstPath.split("/")[0]
+    : "GPU dumps";
+  $("folderCount").textContent =
+    folderFiles.length.toLocaleString() +
+    (folderFiles.length === 1 ? " dump" : " dumps");
+  const cards = folderFiles.map((file, index) => {
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = "dumpCard";
+    card.setAttribute("role", "option");
+    card.title = file.webkitRelativePath || file.name;
+    card.innerHTML =
+      '<canvas class="dumpPreview" width="188" height="106"></canvas>' +
+      '<span class="dumpCardText"><span class="dumpCardName"></span>' +
+      '<span class="dumpCardMeta">Generating preview…</span></span>';
+    card.querySelector(".dumpCardName").textContent = file.name;
+    card.onclick = () => selectFolderFile(index);
+    return card;
+  });
+  $("folderList").replaceChildren(...cards);
+  $("folderPanel").hidden = false;
+  selectFolderFile(0);
+  buildFolderPreviews(folderGeneration);
+}
+$("folder").onchange = (event) => {
+  openFolder(event.target.files);
+  event.target.value = "";
+};
+$("closeFolder").onclick = () => {
+  folderGeneration++;
+  folderFiles = [];
+  selectedFolderIndex = -1;
+  $("folderList").replaceChildren();
+  $("folderPanel").hidden = true;
 };
 let dragDepth = 0;
 window.addEventListener("dragenter", (e) => {
@@ -255,6 +414,7 @@ window.addEventListener("drop", (e) => {
   e.preventDefault();
   dragDepth = 0;
   document.body.classList.remove("dragging");
+  selectFolderCard(-1);
   loadFile(e.dataTransfer.files[0]);
 });
 function requestSeek() {
@@ -550,8 +710,8 @@ function renderTexturePreview(c) {
     `UV bounds ${preview.width} × ${preview.height} · (${preview.left}, ${preview.top})` +
     (preview.windowed ? " · texture window applied" : "");
 }
-function getRenderRegion(state) {
-  if ($("target").value === "display")
+function getStateRenderRegion(state, target) {
+  if (target === "display")
     return [
       state.display[0],
       state.display[1],
@@ -560,6 +720,9 @@ function getRenderRegion(state) {
     ];
   let [x, y, x2, y2] = state.area;
   return [x, y, Math.max(1, x2 - x + 1), Math.max(1, y2 - y + 1)];
+}
+function getRenderRegion(state) {
+  return getStateRenderRegion(state, $("target").value);
 }
 function resetView() {
   view = {

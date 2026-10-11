@@ -4,6 +4,9 @@ const fs = require("node:fs"),
 const html = fs.readFileSync("dist/PSX-Frame-Lab.html", "utf8");
 assert(!/<script src=|<link rel="stylesheet"/.test(html));
 assert(html.includes("window.PSX_WORKER_SOURCE="));
+assert(html.includes('id="folder"'));
+assert(html.includes('id="folderList"'));
+assert(html.includes("webkitdirectory"));
 if (!process.argv[2]) {
   console.log("Standalone bundle check passed.");
   process.exit(0);
