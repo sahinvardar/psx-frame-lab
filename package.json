@@ -6,9 +6,12 @@
   "scripts": {
     "build": "node build-offline.cjs",
     "dev": "vite dist",
+    "format": "prettier --write \"build-offline.cjs\" \"test-*.cjs\" \"dist/index.html\" \"dist/style.css\" \"dist/*.js\"",
+    "format:check": "prettier --check \"build-offline.cjs\" \"test-*.cjs\" \"dist/index.html\" \"dist/style.css\" \"dist/*.js\"",
     "test": "node test-engine.cjs && node test-snapshot-mask.cjs && node test-resolution.cjs && node test-texture.cjs && node test-bundle.cjs"
   },
   "devDependencies": {
+    "prettier": "^3.6.2",
     "vite": "^6.4.1"
   },
   "engines": {

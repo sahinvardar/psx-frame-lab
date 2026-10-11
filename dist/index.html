@@ -1,11 +1,265 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PSX Frame Lab</title><meta name="description" content="Explore PlayStation GPU captures, one command at a time. Local file decoding, frame replay, and VRAM inspection."><link rel="stylesheet" href="style.css"></head><body>
-<header><a class="brand" href="#"><span class="logo">▧</span> PSX <b>FRAME LAB</b><span class="tag">GPU INSPECTOR</span></a><div class="headerActions"><span class="local">● Files stay in your browser</span><button id="demo">Load demo</button><label class="button primary" for="file">＋ Open GPU dump</label><input id="file" type="file" accept=".psxgpu,.zst" hidden></div></header>
-<div class="filebar"><div><span class="eyebrow">CAPTURE</span><strong id="filename">A frame is a sequence of decisions.</strong><span id="filemeta">Open a .psxgpu or .psxgpu.zst file, or explore the demo.</span></div><span id="countBadge" class="badge">READY</span></div>
-<div id="notice" role="status" aria-live="polite">Drop a dump anywhere to inspect it. Zstandard decompression happens locally.</div>
-<main>
-<aside class="commands panel"><div class="panelHead"><h2>Command stream</h2><span id="listCount">0</span></div><div class="filters"><input id="search" placeholder="Search commands, opcodes…" aria-label="Search commands"><select id="filter" aria-label="Command type"><option value="all">All commands</option><option value="draw">Drawing only</option><option value="state">State changes</option><option value="transfer">Transfers</option><option value="event">Sync markers</option></select><select id="interval" aria-label="VSync interval"><option value="all">All intervals</option></select></div><div id="commandList" role="group" aria-label="GPU commands"><div class="empty">Your command stream<br>will appear here.</div></div><div class="listFooter"><span class="dot"></span> <span id="setupInfo">Initial VRAM + GPU state restored before step 1</span></div></aside>
-<section class="workspace"><div class="panel replay"><div class="panelHead"><div class="tabs" role="group" aria-label="View mode"><button id="frameMode" class="active">Frame replay</button><button id="geometryMode">Geometry explorer</button></div><div class="viewActions"><select id="resolution" aria-label="Replay resolution" title="Internal replay resolution"><option value="1">1× Native</option><option value="2">2× Resolution</option><option value="4">4× Resolution</option></select><select id="target" aria-label="Frame region"><option value="draw">Draw target</option><option value="display">Display buffer</option></select><button id="fit">Reset view</button></div></div><div id="screenWrap" class="screenWrap"><canvas id="screen" aria-label="Current GPU frame"></canvas><div id="viewLabel" class="viewLabel">CURRENT STEP <span id="currentResolution">—</span></div><div id="cameraHint" class="cameraHint">Drag to pan · Scroll to zoom</div><div id="emptyScreen"><span>▧</span><h1>Look inside the frame.</h1><p>Inspect every polygon, texture and memory transfer.</p><button id="demoCenter" class="primary">Explore a demo capture →</button></div></div><div id="geometryControls" hidden><label>Layer separation <input id="spread" type="range" min="0" max="100" value="25"></label><label><input id="wire" type="checkbox" checked> Edges</label><span>Projected polygons + synthetic depth. Not original 3D geometry.</span></div><div class="transport"><div class="transportTop"><div><button id="start" title="Initial state (Home)">|←</button><button id="prevDraw" title="Previous drawing command">⇤</button><button id="prev" title="Previous command (Left arrow)">←</button><button id="play" class="primary" title="Play / pause (Space)">▶</button><button id="next" title="Next command (Right arrow)">→</button><button id="nextDraw" title="Next drawing command">⇥</button><button id="end" title="Final command (End)">→|</button></div><div class="stepField"><input id="stepNumber" type="number" min="0" value="0" aria-label="Current command"><span id="total">/ 0</span><select id="speed" aria-label="Playback speed"><option value="1">1×</option><option value="8" selected>8×</option><option value="32">32×</option></select></div></div><input id="timeline" type="range" min="0" max="0" value="0" aria-label="Command timeline"><div class="timelineLabels"><span>RESTORED STATE</span><span id="stepTitle">No capture loaded</span><span>FINAL</span></div></div></div>
-<div class="panel vramPanel"><div class="panelHead"><h2>VRAM <span class="muted">1024 × 512 · 1 MB</span></h2><div><label class="check"><input id="overlays" type="checkbox" checked> Regions</label><button id="exportVram">Save PNG</button></div></div><div class="vramWrap"><canvas id="vram" width="1024" height="512" aria-label="VRAM contents at the current step"></canvas></div><div class="vramFooter"><div><span class="legend mint"></span> Draw area <span class="legend blue"></span> Texture page <span class="legend pink"></span> Palette</div><span id="pixelInfo">Hover to inspect a VRAM pixel</span></div></div></section>
-<aside class="right"><div class="panel finalPanel"><div class="panelHead"><h2>Final frame</h2><button id="exportFinal" title="Save final frame">↓ PNG</button></div><div class="finalWrap"><canvas id="final" width="512" height="240" aria-label="Final rendered frame"></canvas></div><p id="finalCaption">Complete capture · draw target</p></div><div class="panel detailPanel"><div class="panelHead"><h2>Command details</h2><span id="opBadge" class="badge">—</span></div><div id="details"><div class="empty">Select a command to see its<br>vertices and GPU state.</div></div></div><details class="panel about"><summary>About this reconstruction</summary><p>Files are decoded on your device. The software renderer supports PS1 polygons, lines, rectangles, palettes, texture windows, transparency, dithering, masks and VRAM transfers.</p><p>This is an inspection renderer, not a cycle-accurate emulator. Rasterization edges, cache feedback and interlaced / 24-bit display behavior can differ from DuckStation.</p><p>The geometry explorer uses screen coordinates and optional draw-order depth. GPU dumps cannot recover the original 3D camera, hidden surfaces, or world coordinates.</p><p>Supports legacy DuckStation v1 and standard v1r1 dumps, raw or Zstandard compressed. XZ files must be decompressed first. Limit: 64 MB decompressed / 100,000 GP0 commands.</p><a href="https://github.com/ps1dev/standards/blob/main/GPUDUMP.md" target="_blank" rel="noreferrer">Format reference ↗</a></details></aside>
-</main><footer><span>PSX FRAME LAB <span class="muted">/ A closer look at the original PlayStation GPU</span></span><span>← → Step &nbsp; Space Play &nbsp; Home / End Jump</span></footer><div id="dropOverlay">Drop your GPU dump</div>
-<script src="engine.js"></script><script src="app.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>PSX Frame Lab</title>
+    <meta
+      name="description"
+      content="Explore PlayStation GPU captures, one command at a time. Local file decoding, frame replay, and VRAM inspection."
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <a class="brand" href="#"
+        ><span class="logo">▧</span> PSX <b>FRAME LAB</b
+        ><span class="tag">GPU INSPECTOR</span></a
+      >
+      <div class="headerActions">
+        <span class="local">● Files stay in your browser</span
+        ><button id="demo">Load demo</button
+        ><label class="button primary" for="file">＋ Open GPU dump</label
+        ><input id="file" type="file" accept=".psxgpu,.zst" hidden />
+      </div>
+    </header>
+    <div class="filebar">
+      <div>
+        <span class="eyebrow">CAPTURE</span
+        ><strong id="filename">A frame is a sequence of decisions.</strong
+        ><span id="filemeta"
+          >Open a .psxgpu or .psxgpu.zst file, or explore the demo.</span
+        >
+      </div>
+      <span id="countBadge" class="badge">READY</span>
+    </div>
+    <div id="notice" role="status" aria-live="polite">
+      Drop a dump anywhere to inspect it. Zstandard decompression happens
+      locally.
+    </div>
+    <main>
+      <aside class="commands panel">
+        <div class="panelHead">
+          <h2>Command stream</h2>
+          <span id="listCount">0</span>
+        </div>
+        <div class="filters">
+          <input
+            id="search"
+            placeholder="Search commands, opcodes…"
+            aria-label="Search commands"
+          /><select id="filter" aria-label="Command type">
+            <option value="all">All commands</option>
+            <option value="draw">Drawing only</option>
+            <option value="state">State changes</option>
+            <option value="transfer">Transfers</option>
+            <option value="event">Sync markers</option></select
+          ><select id="interval" aria-label="VSync interval">
+            <option value="all">All intervals</option>
+          </select>
+        </div>
+        <div id="commandList" role="group" aria-label="GPU commands">
+          <div class="empty">Your command stream<br />will appear here.</div>
+        </div>
+        <div class="listFooter">
+          <span class="dot"></span>
+          <span id="setupInfo"
+            >Initial VRAM + GPU state restored before step 1</span
+          >
+        </div>
+      </aside>
+      <section class="workspace">
+        <div class="panel replay">
+          <div class="panelHead">
+            <div class="tabs" role="group" aria-label="View mode">
+              <button id="frameMode" class="active">Frame replay</button
+              ><button id="geometryMode">Geometry explorer</button>
+            </div>
+            <div class="viewActions">
+              <select
+                id="resolution"
+                aria-label="Replay resolution"
+                title="Internal replay resolution"
+              >
+                <option value="1">1× Native</option>
+                <option value="2">2× Resolution</option>
+                <option value="4">4× Resolution</option></select
+              ><select id="target" aria-label="Frame region">
+                <option value="draw">Draw target</option>
+                <option value="display">Display buffer</option></select
+              ><button id="fit">Reset view</button>
+            </div>
+          </div>
+          <div id="screenWrap" class="screenWrap">
+            <canvas id="screen" aria-label="Current GPU frame"></canvas>
+            <div id="viewLabel" class="viewLabel">
+              CURRENT STEP <span id="currentResolution">—</span>
+            </div>
+            <div id="cameraHint" class="cameraHint">
+              Drag to pan · Scroll to zoom
+            </div>
+            <div id="emptyScreen">
+              <span>▧</span>
+              <h1>Look inside the frame.</h1>
+              <p>Inspect every polygon, texture and memory transfer.</p>
+              <button id="demoCenter" class="primary">
+                Explore a demo capture →
+              </button>
+            </div>
+          </div>
+          <div id="geometryControls" hidden>
+            <label
+              >Layer separation
+              <input
+                id="spread"
+                type="range"
+                min="0"
+                max="100"
+                value="25" /></label
+            ><label><input id="wire" type="checkbox" checked /> Edges</label
+            ><span
+              >Projected polygons + synthetic depth. Not original 3D
+              geometry.</span
+            >
+          </div>
+          <div class="transport">
+            <div class="transportTop">
+              <div>
+                <button id="start" title="Initial state (Home)">|←</button
+                ><button id="prevDraw" title="Previous drawing command">
+                  ⇤</button
+                ><button id="prev" title="Previous command (Left arrow)">
+                  ←</button
+                ><button id="play" class="primary" title="Play / pause (Space)">
+                  ▶</button
+                ><button id="next" title="Next command (Right arrow)">→</button
+                ><button id="nextDraw" title="Next drawing command">⇥</button
+                ><button id="end" title="Final command (End)">→|</button>
+              </div>
+              <div class="stepField">
+                <input
+                  id="stepNumber"
+                  type="number"
+                  min="0"
+                  value="0"
+                  aria-label="Current command"
+                /><span id="total">/ 0</span
+                ><select id="speed" aria-label="Playback speed">
+                  <option value="1">1×</option>
+                  <option value="8" selected>8×</option>
+                  <option value="32">32×</option>
+                </select>
+              </div>
+            </div>
+            <input
+              id="timeline"
+              type="range"
+              min="0"
+              max="0"
+              value="0"
+              aria-label="Command timeline"
+            />
+            <div class="timelineLabels">
+              <span>RESTORED STATE</span
+              ><span id="stepTitle">No capture loaded</span><span>FINAL</span>
+            </div>
+          </div>
+        </div>
+        <div class="panel vramPanel">
+          <div class="panelHead">
+            <h2>VRAM <span class="muted">1024 × 512 · 1 MB</span></h2>
+            <div>
+              <label class="check"
+                ><input id="overlays" type="checkbox" checked /> Regions</label
+              ><button id="exportVram">Save PNG</button>
+            </div>
+          </div>
+          <div class="vramWrap">
+            <canvas
+              id="vram"
+              width="1024"
+              height="512"
+              aria-label="VRAM contents at the current step"
+            ></canvas>
+          </div>
+          <div class="vramFooter">
+            <div>
+              <span class="legend mint"></span> Draw area
+              <span class="legend blue"></span> Texture page
+              <span class="legend pink"></span> Palette
+            </div>
+            <span id="pixelInfo">Hover to inspect a VRAM pixel</span>
+          </div>
+        </div>
+      </section>
+      <aside class="right">
+        <div class="panel finalPanel">
+          <div class="panelHead">
+            <h2>Final frame</h2>
+            <button id="exportFinal" title="Save final frame">↓ PNG</button>
+          </div>
+          <div class="finalWrap">
+            <canvas
+              id="final"
+              width="512"
+              height="240"
+              aria-label="Final rendered frame"
+            ></canvas>
+          </div>
+          <p id="finalCaption">Complete capture · draw target</p>
+        </div>
+        <div class="panel detailPanel">
+          <div class="panelHead">
+            <h2>Command details</h2>
+            <span id="opBadge" class="badge">—</span>
+          </div>
+          <div id="details">
+            <div class="empty">
+              Select a command to see its<br />vertices and GPU state.
+            </div>
+          </div>
+        </div>
+        <details class="panel about">
+          <summary>About this reconstruction</summary>
+          <p>
+            Files are decoded on your device. The software renderer supports PS1
+            polygons, lines, rectangles, palettes, texture windows,
+            transparency, dithering, masks and VRAM transfers.
+          </p>
+          <p>
+            This is an inspection renderer, not a cycle-accurate emulator.
+            Rasterization edges, cache feedback and interlaced / 24-bit display
+            behavior can differ from DuckStation.
+          </p>
+          <p>
+            The geometry explorer uses screen coordinates and optional
+            draw-order depth. GPU dumps cannot recover the original 3D camera,
+            hidden surfaces, or world coordinates.
+          </p>
+          <p>
+            Supports legacy DuckStation v1 and standard v1r1 dumps, raw or
+            Zstandard compressed. XZ files must be decompressed first. Limit: 64
+            MB decompressed / 100,000 GP0 commands.
+          </p>
+          <a
+            href="https://github.com/ps1dev/standards/blob/main/GPUDUMP.md"
+            target="_blank"
+            rel="noreferrer"
+            >Format reference ↗</a
+          >
+        </details>
+      </aside>
+    </main>
+    <footer>
+      <span
+        >PSX FRAME LAB
+        <span class="muted"
+          >/ A closer look at the original PlayStation GPU</span
+        ></span
+      ><span>← → Step &nbsp; Space Play &nbsp; Home / End Jump</span>
+    </footer>
+    <div id="dropOverlay">Drop your GPU dump</div>
+    <script src="engine.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

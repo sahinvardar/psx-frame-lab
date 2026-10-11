@@ -1,5 +1,42 @@
-const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
-const html=fs.readFileSync('dist/PSX-Frame-Lab.html','utf8');assert(!/<script src=|<link rel="stylesheet"/.test(html));assert(html.includes('window.PSX_WORKER_SOURCE='));
-if(!process.argv[2]){console.log('Standalone bundle check passed.');process.exit(0);}
-const source=JSON.parse(html.match(/window\.PSX_WORKER_SOURCE=(.*?);<\/script>/s)[1]);let last;const ctx={TextDecoder,TextEncoder,console,postMessage:m=>{last=m;}};ctx.self=ctx;vm.createContext(ctx);vm.runInContext(source,ctx);
-(async()=>{const buf=fs.readFileSync(process.argv[2]),data=buf.buffer.slice(buf.byteOffset,buf.byteOffset+buf.byteLength);await ctx.onmessage({data:{type:'load',buffer:data}});assert.equal(last.type,'loaded',last.text);assert.equal(last.commands.length,2482);const final=last.raw.slice();await ctx.onmessage({data:{type:'seek',n:100,request:1}});assert.equal(last.n,100);await ctx.onmessage({data:{type:'seek',n:2482,request:2}});assert.deepEqual(last.raw,final);await ctx.onmessage({data:{type:'load',buffer:new ArrayBuffer(20)}});assert.equal(last.type,'error');console.log('Standalone worker: compressed Spyro load, reverse seek, final restore and malformed-file error passed.');})();
+const fs = require("node:fs"),
+  vm = require("node:vm"),
+  assert = require("node:assert/strict");
+const html = fs.readFileSync("dist/PSX-Frame-Lab.html", "utf8");
+assert(!/<script src=|<link rel="stylesheet"/.test(html));
+assert(html.includes("window.PSX_WORKER_SOURCE="));
+if (!process.argv[2]) {
+  console.log("Standalone bundle check passed.");
+  process.exit(0);
+}
+const source = JSON.parse(
+  html.match(/window\.PSX_WORKER_SOURCE=(.*?);<\/script>/s)[1],
+);
+let last;
+const ctx = {
+  TextDecoder,
+  TextEncoder,
+  console,
+  postMessage: (m) => {
+    last = m;
+  },
+};
+ctx.self = ctx;
+vm.createContext(ctx);
+vm.runInContext(source, ctx);
+(async () => {
+  const buf = fs.readFileSync(process.argv[2]),
+    data = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+  await ctx.onmessage({ data: { type: "load", buffer: data } });
+  assert.equal(last.type, "loaded", last.text);
+  assert.equal(last.commands.length, 2482);
+  const final = last.raw.slice();
+  await ctx.onmessage({ data: { type: "seek", n: 100, request: 1 } });
+  assert.equal(last.n, 100);
+  await ctx.onmessage({ data: { type: "seek", n: 2482, request: 2 } });
+  assert.deepEqual(last.raw, final);
+  await ctx.onmessage({ data: { type: "load", buffer: new ArrayBuffer(20) } });
+  assert.equal(last.type, "error");
+  console.log(
+    "Standalone worker: compressed Spyro load, reverse seek, final restore and malformed-file error passed.",
+  );
+})();

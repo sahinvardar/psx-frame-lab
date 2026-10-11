@@ -19,11 +19,14 @@ npm install
 npm run dev
 npm test
 npm run build
+npm run format
 ```
 
 `npm run dev` serves `dist/` at `http://localhost:5173` and automatically reloads the browser when source files change.
 
 `npm run build` regenerates `dist/PSX-Frame-Lab.html`.
+
+`npm run format` formats the maintained HTML, CSS, JavaScript, build script, and tests. Use `npm run format:check` in automated checks.
 
 The default test suite runs all self-contained checks. Capture-backed integration checks also run when their scripts receive the required dump paths directly.
 
@@ -64,12 +67,14 @@ Raster edges, texture-cache feedback, overlapping transfers, and exact hardware 
 
 - `dist/index.html` - interface
 - `dist/style.css` - appearance
-- `dist/app.js` - interactions, canvas views, and synthetic demo
-- `dist/engine.js` - parser and software GPU
-- `dist/worker.js` - decompression, replay, and seek checkpoints
+- `dist/app.js` - browser state, interactions, canvas views, and synthetic demo
+- `dist/engine.js` - dump parser, command decoder, software GPU, and texture preview
+- `dist/worker.js` - decompression, replay orchestration, seek checkpoints, and high-resolution replay
 - `dist/vendor/fzstd.js` - fzstd 0.1.1, with its MIT license alongside it
 - `build-offline.cjs` - standalone HTML builder
 - `test-*.cjs` - parser, renderer, bundle, texture, snapshot, and resolution checks
+
+`dist/PSX-Frame-Lab.html` is generated. Make changes in the modular files above and run `npm run build` rather than editing the standalone bundle directly.
 
 ## Texture preview
 
