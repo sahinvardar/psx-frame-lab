@@ -1,0 +1,18 @@
+{
+  "name": "psx-frame-lab",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A local browser tool for inspecting DuckStation PS1 GPU dumps.",
+  "scripts": {
+    "build": "node build-offline.cjs",
+    "dev": "vite dist",
+    "test": "node test-engine.cjs && node test-snapshot-mask.cjs && node test-resolution.cjs && node test-texture.cjs && node test-bundle.cjs"
+  },
+  "devDependencies": {
+    "vite": "^6.4.1"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "UNLICENSED"
+}
